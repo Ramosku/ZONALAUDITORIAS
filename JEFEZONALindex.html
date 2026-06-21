@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Auditorías - Tiendas Mass</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root{
+    --mass-blue:#0b3d91;
+    --mass-blue-dark:#082c6b;
+    --mass-yellow:#ffd200;
+    --bg:#f2f4f8;
+    --card:#ffffff;
+    --text:#1b1f27;
+    --text2:#6b7280;
+    --text3:#9aa1ad;
+    --muted:#6b7280;
+    --border:#e4e7ec;
+    --danger:#d92d20;
+    --success:#0f9d58;
+    --amber:#b7791f;
+    --radius:14px;
+    --radius-sm:8px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ---------- LOGIN ---------- */
+  #loginScreen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(160deg,var(--mass-blue) 0%, var(--mass-blue-dark) 100%);
+    padding:20px;
+  }
+  .login-card{
+    background:var(--card);
+    width:100%;
+    max-width:380px;
+    border-radius:var(--radius);
+    padding:32px 28px;
+    box-shadow:0 20px 50px rgba(0,0,0,.25);
+  }
+  .login-logo{
+    width:64px; height:64px;
+    background:var(--mass-yellow);
+    border-radius:16px;
+    display:flex; align-items:center; justify-content:center;
+    margin:0 auto 16px;
+    font-size:28px;
+    font-weight:800;
+    color:var(--mass-blue-dark);
+  }
+  .login-card h1{
+    text-align:center;
+    font-size:19px;
+    color:var(--mass-blue-dark);
+    margin-bottom:4px;
+  }
+  .login-card p.subtitle{
+    text-align:center;
+    color:var(--muted);
+    font-size:13px;
+    margin-bottom:24px;
+  }
+  .field{ margin-bottom:16px; }
+  .field label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    color:var(--text);
+    margin-bottom:6px;
+  }
+  .field input{
+    width:100%;
+    padding:13px 14px;
+    border:1.5px solid var(--border);
+    border-radius:10px;
+    font-size:15px;
+    background:#fafbfc;
+  }
+  .field input:focus{ outline:none; border-color:var(--mass-blue); background:#fff; }
+  .btn{
+    padding:12px 16px;
+    border:none;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .btn:active{ transform:scale(.98); }
+  .btn-full{ width:100%; padding:14px; font-size:15px; }
+  .btn-primary{ background:var(--mass-blue); color:#fff; }
+  .btn-primary:hover{ background:var(--mass-blue-dark); }
+  .btn-yellow{ background:var(--mass-yellow); color:var(--mass-blue-dark); }
+  .btn-outline{ background:#fff; color:var(--mass-blue); border:1.5px solid var(--mass-blue); }
+  .btn-danger{ background:#fef2f2; color:var(--danger); border:1px solid #fecaca; }
+  .login-error{
+    background:#fef2f2; color:var(--danger); border:1px solid #fecaca;
+    border-radius:8px; padding:10px 12px; font-size:13px; margin-bottom:16px; display:none;
+  }
+
+  /* ---------- APP SHELL ---------- */
+  #appScreen{ display:none; min-height:100vh; }
+  .topbar{
+    background:var(--mass-blue); color:#fff; padding:14px 18px;
+    display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:50; box-shadow:0 2px 10px rgba(0,0,0,.15);
+  }
+  .topbar-left{ display:flex; align-items:center; gap:10px; }
+  .topbar-logo{
+    width:34px; height:34px; background:var(--mass-yellow); border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; color:var(--mass-blue-dark); font-size:15px;
+  }
+  .topbar h2{ font-size:15px; font-weight:700; line-height:1.2; }
+  .topbar span.sub{ font-size:11px; opacity:.8; display:flex; align-items:center; }
+  .logout-btn{
+    background:rgba(255,255,255,.15); color:#fff; border:none;
+    padding:9px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .sync-dot{ width:7px; height:7px; border-radius:50%; background:#4ade80; display:inline-block; margin-right:5px; }
+
+  .container{ max-width:760px; margin:0 auto; padding:18px 14px 100px; }
+
+  /* Tabs */
+  .tabs{ display:flex; gap:8px; margin-bottom:16px; overflow-x:auto; padding-bottom:2px; }
+  .tab{
+    padding:10px 14px; border-radius:10px; background:#fff; border:1px solid var(--border);
+    font-size:12.5px; font-weight:600; color:var(--text2); cursor:pointer; white-space:nowrap; flex-shrink:0;
+  }
+  .tab.active{ background:var(--mass-blue); color:#fff; border-color:var(--mass-blue); }
+
+  .card{
+    background:var(--card); border-radius:var(--radius); padding:18px; margin-bottom:14px; border:1px solid var(--border);
+  }
+  .card h3{ font-size:15px; color:var(--mass-blue-dark); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .step-badge{
+    width:22px; height:22px; border-radius:50%; background:var(--mass-blue); color:#fff; font-size:12px;
+    font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+
+  select, input[type=text], textarea{
+    width:100%; padding:13px 14px; border:1.5px solid var(--border); border-radius:10px;
+    font-size:15px; background:#fafbfc; font-family:inherit;
+  }
+  select:focus, input:focus, textarea:focus{ outline:none; border-color:var(--mass-blue); background:#fff; }
+
+  .role-options{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .role-btn{
+    padding:16px 10px; border:1.5px solid var(--border); border-radius:12px; background:#fafbfc;
+    text-align:center; cursor:pointer;
+  }
+  .role-btn .icon{ font-size:22px; display:block; margin-bottom:6px; }
+  .role-btn .label{ font-size:13px; font-weight:600; color:var(--text); }
+  .role-btn.selected{ border-color:var(--mass-blue); background:#eef3fc; }
+  .role-btn.selected .label{ color:var(--mass-blue-dark); }
+
+  .field-group{ margin-bottom:14px; }
+  .field-group label{ display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:var(--text); }
+
+  .selected-summary{
+    background:#eef3fc; border:1px solid #cfe0fb; border-radius:10px; padding:12px 14px;
+    font-size:13px; color:var(--mass-blue-dark); margin-bottom:16px;
+  }
+  .selected-summary b{ font-weight:700; }
+  .change-link{ font-size:12px; color:var(--mass-blue); font-weight:700; cursor:pointer; text-decoration:underline; margin-top:4px; display:inline-block; }
+
+  .disabled-block{ opacity:.4; pointer-events:none; }
+
+  /* Checklist */
+  .audit-summary{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
+  .score-box{
+    background:var(--text3); color:#fff; border-radius:12px; padding:14px 10px; text-align:center;
+  }
+  .score-box.final{ background:var(--mass-blue); }
+  .score-box.aprobado{ background:var(--success); }
+  .score-box.bueno{ background:var(--amber); }
+  .score-box.jalado{ background:var(--danger); }
+  .score-value{ display:block; font-size:20px; font-weight:800; }
+  .score-label{ font-size:10.5px; opacity:.9; text-transform:uppercase; letter-spacing:.3px; }
+  .chart-wrap{ width:100%; margin-top:14px; }
+
+  /* Month / category accordions (reuse look of category-section) */
+  .month-header{
+    background:#fafbfc; padding:13px 14px; display:flex; justify-content:space-between; align-items:center;
+    cursor:pointer; font-size:13.5px; font-weight:700; color:var(--mass-blue-dark); gap:10px; flex-wrap:wrap;
+  }
+  .month-content{ display:none; padding:10px 12px 4px; }
+  .month-content.open{ display:block; }
+
+  .category-section{ border:1px solid var(--border); border-radius:12px; margin-bottom:10px; overflow:hidden; }
+  .category-header{
+    background:#fafbfc; padding:13px 14px; display:flex; justify-content:space-between; align-items:center;
+    cursor:pointer; font-size:13.5px; font-weight:700; color:var(--mass-blue-dark); gap:10px; flex-wrap:wrap;
+  }
+  .category-score{ font-size:11.5px; font-weight:600; color:var(--text2); white-space:nowrap; }
+  .category-content{ display:none; padding:6px 14px 12px; }
+  .category-content.open{ display:block; }
+  .audit-item{ display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid #f1f2f5; }
+  .audit-item:last-child{ border-bottom:none; }
+  .audit-item input[type=checkbox]{ width:19px; height:19px; flex-shrink:0; accent-color:var(--mass-blue); }
+  .audit-item label{ flex:1; font-size:13px; line-height:1.4; }
+  .item-points{ font-size:11px; color:var(--text3); font-weight:700; white-space:nowrap; }
+  .select-all-btn{
+    font-size:10.5px; padding:4px 9px; background:#e8f8ef; color:var(--success); border:1px solid #9EE0C0;
+    border-radius:6px; font-weight:700; cursor:pointer; white-space:nowrap;
+  }
+
+  .actions-row{ display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; }
+  .actions-row .btn{ flex:1; min-width:140px; }
+
+  /* History items */
+  .empty-state{ text-align:center; padding:30px 10px; color:var(--muted); font-size:13.5px; }
+  .empty-state .icon{ font-size:34px; display:block; margin-bottom:8px; }
+
+  .audit-history-item{ border:1px solid var(--border); border-radius:12px; margin-bottom:10px; overflow:hidden; background:#fafbfc; }
+  .audit-history-header{ padding:13px 14px; display:flex; justify-content:space-between; align-items:flex-start; gap:8px; flex-wrap:wrap; }
+  .audit-history-header strong{ font-size:13.5px; }
+  .audit-history-details{ padding:0 14px 13px; font-size:12px; color:var(--text2); display:flex; flex-direction:column; gap:4px; }
+  .badge{ font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; white-space:nowrap; }
+  .badge-ok{ background:#e8f8ef; color:var(--success); }
+  .badge-warn{ background:#fff7e6; color:var(--amber); }
+  .badge-danger{ background:#fef2f2; color:var(--danger); }
+  .icon-btn{
+    background:none; border:1px solid var(--border); border-radius:8px; padding:6px 9px; cursor:pointer; color:var(--danger); font-size:12px;
+  }
+
+  .fallo-row{ border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:8px; background:#fafbfc; }
+  .fallo-top{ display:flex; justify-content:space-between; gap:8px; margin-bottom:5px; flex-wrap:wrap; }
+  .fallo-cat{ font-size:11px; font-weight:700; color:var(--mass-blue); background:#eef3fc; padding:3px 8px; border-radius:6px; }
+  .fallo-desc{ font-size:13px; margin:5px 0; }
+  .fallo-meta{ font-size:11.5px; color:var(--text3); }
+  .fallo-actions{ display:flex; gap:8px; margin-top:8px; align-items:center; }
+  .fallo-select{ font-size:12px; padding:5px 8px; border:1px solid var(--border); border-radius:6px; width:auto; }
+
+  /* Modal detalle */
+  .modal-bg{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:300;
+    align-items:flex-end; justify-content:center;
+  }
+  .modal-bg.open{ display:flex; }
+  .modal-box{
+    background:#fff; width:100%; max-width:680px; max-height:88vh; overflow-y:auto;
+    border-radius:18px 18px 0 0; padding:20px;
+  }
+  @media (min-width:640px){
+    .modal-bg{ align-items:center; }
+    .modal-box{ border-radius:16px; max-height:85vh; }
+  }
+  .modal-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .modal-close{ background:#f2f4f8; border:none; width:32px; height:32px; border-radius:50%; font-size:16px; cursor:pointer; }
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--mass-blue-dark); color:#fff; padding:13px 22px; border-radius:30px;
+    font-size:13.5px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.25);
+    opacity:0; transition:all .25s; z-index:400; pointer-events:none; max-width:90%; text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.error{ background:var(--danger); }
+  .toast.success{ background:var(--success); }
+
+  .filters-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .filters-row select{ width:auto; font-size:12px; padding:7px 10px; }
+
+  html, body{ overflow-x:hidden; max-width:100%; }
+
+  @media (max-width:480px){
+    .container{ padding:14px 10px 100px; }
+    .card{ padding:14px; }
+    .topbar{ padding:12px 14px; }
+    .topbar h2{ font-size:14px; }
+    .score-value{ font-size:17px; }
+    .score-label{ font-size:9.5px; }
+    .tab{ padding:9px 12px; font-size:12px; }
+    .filters-row{ flex-direction:column; }
+    .filters-row select{ width:100%; }
+    .category-header, .month-header{ padding:11px 12px; font-size:12.5px; }
+    .audit-item label{ font-size:12.5px; }
+    .login-card{ padding:26px 20px; }
+  }
+  @media (max-width:340px){
+    .role-options{ grid-template-columns:1fr; }
+  }
+
+  .app-footer{
+    text-align:center; padding:18px 10px 8px; font-size:11px; color:var(--text3);
+    border-top:1px solid var(--border); margin-top:24px;
+  }
+  .login-footer{
+    text-align:center; font-size:11px; color:#9AA0B0; margin-top:18px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">M</div>
+    <h1>Auditorías · Tiendas Mass</h1>
+    <p class="subtitle">Acceso exclusivo para jefatura de zona</p>
+    <div class="login-error" id="loginError">Usuario o contraseña incorrectos.</div>
+    <form id="loginForm">
+      <div class="field">
+        <label>Usuario</label>
+        <select id="loginUser" required>
+          <option value="">— Selecciona tu usuario —</option>
+          <option value="JEFE">JEFE DE ZONA</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="password" id="loginPass" autocomplete="current-password" placeholder="Ingresa tu contraseña" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full" id="loginSubmitBtn">Ingresar</button>
+    </form>
+    <p class="login-footer">Desarrollado por Alonso Ramos Barbarán</p>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="appScreen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">M</div>
+      <div>
+        <h2>Auditorías de Tienda</h2>
+        <span class="sub"><span class="sync-dot"></span>Sincronizado en la nube</span>
+      </div>
+    </div>
+    <button class="logout-btn" id="logoutBtn">Salir</button>
+  </div>
+
+  <div class="container">
+
+    <div class="tabs">
+      <div class="tab active" data-tab="0">📝 Checklist Actual</div>
+      <div class="tab" data-tab="1">📚 Historial</div>
+      <div class="tab" data-tab="2">⚠️ Fallos</div>
+    </div>
+
+    <!-- TAB 0: SELECCIÓN + CHECKLIST -->
+    <div id="panel-0">
+
+      <!-- Selección de tienda y rol -->
+      <div class="card" id="selectionCard">
+        <h3><span class="step-badge">1</span> Datos de la auditoría</h3>
+        <div class="field-group">
+          <label>Selecciona la tienda</label>
+          <select id="storeSelect">
+            <option value="">-- Elige una tienda --</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>¿A quién estás auditando?</label>
+          <div class="role-options">
+            <div class="role-btn" data-role="Administrador">
+              <span class="icon">🧑‍💼</span>
+              <span class="label">Administrador</span>
+            </div>
+            <div class="role-btn" data-role="Encargado">
+              <span class="icon">🧑‍🔧</span>
+              <span class="label">Encargado</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" id="startChecklistBtn" disabled>Comenzar checklist</button>
+      </div>
+
+      <!-- Checklist (oculto hasta elegir tienda + rol) -->
+      <div id="checklistSection" style="display:none">
+        <div class="card">
+          <div class="selected-summary" id="selectedSummary"></div>
+
+          <div class="audit-summary">
+            <div class="score-box final">
+              <span class="score-value" id="finalScore">0.00%</span>
+              <span class="score-label">Promedio General</span>
+            </div>
+            <div class="score-box" id="statusBox">
+              <span class="score-value" id="finalStatus">SIN EVALUAR</span>
+              <span class="score-label">Estado Final</span>
+            </div>
+          </div>
+          <div class="chart-wrap" id="chartWrap">
+            <canvas id="auditChart"></canvas>
+          </div>
+
+          <div id="auditChecklistContainer"></div>
+
+          <div class="actions-row">
+            <button class="btn btn-yellow" id="saveAuditBtn">💾 Guardar Auditoría</button>
+            <button class="btn btn-outline" id="resetAuditBtn">↺ Reiniciar checklist</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 1: HISTORIAL -->
+    <div id="panel-1" style="display:none">
+      <div class="card">
+        <h3>📚 Auditorías guardadas</h3>
+        <div class="filters-row">
+          <select id="hist-filter-tienda"><option value="">Todas las tiendas</option></select>
+          <select id="hist-filter-estado">
+            <option value="">Todos los estados</option>
+            <option>APROBADO</option><option>BUENO</option><option>JALADO</option>
+          </select>
+        </div>
+        <div id="audit-history-list"></div>
+      </div>
+    </div>
+
+    <!-- TAB 2: FALLOS -->
+    <div id="panel-2" style="display:none">
+      <div class="card">
+        <h3>⚠️ Fallos detectados</h3>
+        <div class="filters-row">
+          <select id="fallo-filter-tienda"><option value="">Todas las tiendas</option></select>
+          <select id="fallo-filter-estado">
+            <option value="">Todos los estados</option>
+            <option>Pendiente</option><option>En proceso</option><option>Subsanado</option>
+          </select>
+        </div>
+        <div id="fallos-list"></div>
+      </div>
+    </div>
+
+    <div class="app-footer">Auditorías · Tiendas Mass — Desarrollado por Alonso Ramos Barbarán</div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE DE AUDITORÍA -->
+<div class="modal-bg" id="modalDetalle">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 style="font-size:15px;color:var(--mass-blue-dark)">Detalle de auditoría</h3>
+      <button class="modal-close" onclick="closeDetalle()">✕</button>
+    </div>
+    <div id="detalleContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+// ====================== CONFIG ======================
+// El acceso ahora se controla con Firebase Authentication (ver consola de Firebase),
+// ya no hay usuario/contraseña escritos en este archivo.
+
+// Lista de tiendas de la zona - EDITA aquí si agregas o quitas tiendas
+const TIENDAS = [
+  "1268 - SPSA MOCHE8 TRU MS",
+  "1293 - SPSA EJERCI999TRU MS",
+  "1300 - SPSA JERUSA4TRUMS",
+  "1304 - SPSA VALLEJO10TRU MS",
+  "1340 - SPSA UCEDAA9 TRU MS",
+  "1447 - SPSA INCAS 4 TRU MS",
+  "1474 - SPSA WICHAN 30 TRU MS",
+  "1609 - SPSA SANTA 13 TRU MS",
+  "1610 - SPSA INDOAME 5 TRU MS",
+  "1615 - SPSA PRADA O13 TRU MS",
+  "1616 - SPSA VALLEJO 4 TRU MS",
+  "1718 - EJERCI3 TRU MS",
+  "2171 - SPSA ESPAÑA24 TRU MS",
+  "2244 - SPSA ANCASH4 TRU MS",
+  "2254 - SPSA 22FEB26 TRU MS",
+  "2396 - SPSA SALVA6 TRU MS",
+  "2410 - SPSA MARISCAL1 TRU MS",
+  "2453 - SPSA OLAYA37 TRU MS",
+  "2632 - SPSA CAJAMARCA755 TRU MS"
+];
+
+const REGISTRADO_POR = "Jefe de Zona";
+
+// ====================== CHECKLIST (idéntico al sistema principal) ======================
+const auditChecklistData = [
+  { category: "DINERO", items: [
+    { text: "Las NC emitidas cuentan con los datos completos (DNI, nombre y firma)", points: 5 },
+    { text: "El importe del retiro no supera el límite establecido", points: 5 },
+    { text: "En el arqueo de cajero del auditor no se encuentran diferencias", points: 5 },
+    { text: "Todos los sobres son depositados inmediatamente", points: 5 },
+    { text: "Todo dinero retirado de bóveda queda registrado (fondo)", points: 5 },
+    { text: "La cuadratura de medios de pago cuadra (lotes)", points: 5 },
+    { text: "La cuadratura de venta (pre cierre) se realiza al día siguiente", points: 5 },
+    { text: "Las anomalías fueron trabajadas", points: 10 },
+    { text: "Los registros de depósitos en BBR corresponden al reporte de la transportadora", points: 5 },
+    { text: "Los sobres enviados cuadran con lo declarado en el sistema", points: 5 },
+    { text: "En el arqueo de bóveda del auditor no se encuentran diferencias", points: 5 },
+    { text: "El coordinador realiza arqueos de bóveda", points: 5 },
+    { text: "Las diferencias encontradas en arqueos anteriores fueron registradas", points: 5 },
+    { text: "Los usuarios de cajeros son personales e intransferibles", points: 5 },
+    { text: "Los usuarios de tesorería son personales e intransferibles", points: 5 },
+    { text: "Los usuarios activos corresponden a la planilla actual de tienda", points: 5 },
+    { text: "No se usan usuarios de personal cesado o trasladado", points: 5 },
+    { text: "Los autorizadores son personales e intransferibles", points: 5 },
+    { text: "Los autorizadores activos corresponden a la planilla actual", points: 5 },
+    { text: "No se usan autorizadores de personal cesado o trasladado", points: 5 }
+  ]},
+  { category: "CLIENTE", items: [
+    { text: "Libro de reclamaciones de respaldo y QR dentro del libro", points: 5 },
+    { text: "Aviso del Libro de Reclamaciones Virtual", points: 5 },
+    { text: "Reclamos registrados en SIREC", points: 5 },
+    { text: "Reclamos atendidos dentro del plazo normativo", points: 5 },
+    { text: "Atención preferente a personas con perro guía", points: 5 },
+    { text: "Aviso de Ley de Atención Preferente", points: 5 },
+    { text: "Aviso de Medios de Pago", points: 5 },
+    { text: "Aviso contra el Acoso Sexual", points: 5 },
+    { text: "Aviso contra la Discriminación", points: 5 },
+    { text: "Certificado de calibración de balanzas vigente", points: 5 }
+  ]},
+  { category: "GDH", items: [
+    { text: "Acceso a We Connect / Academia MASS", points: 5 },
+    { text: "Conductas culturales SEHMAS conocidas por colaboradores", points: 5 },
+    { text: "Mesa o silla operativa para almuerzo", points: 5 },
+    { text: "Microondas operativo", points: 5 },
+    { text: "Ventiladores operativos", points: 5 },
+    { text: "Pago de asignación familiar", points: 5 },
+    { text: "Descuentos por diferencia de caja con formato firmado", points: 5 },
+    { text: "Descuento ejecutado coincide con BBR", points: 6 },
+    { text: "Enrolamiento dentro del plazo establecido", points: 6 },
+    { text: "Cumplimiento del refrigerio mínimo", points: 6 },
+    { text: "Visualización de boleta en SuperApp", points: 5 },
+    { text: "Full time y part time cuentan con marcaciones correctas", points: 6 },
+    { text: "Part time no realizan horas extras", points: 6 },
+    { text: "Colaboradores se retiran después de marcar salida", points: 6 },
+    { text: "Horario publicado y visible", points: 5 },
+    { text: "RPC operativo", points: 5 },
+    { text: "Sin reincidencias de auditorías anteriores", points: 3 }
+  ]},
+  { category: "INVENTARIOS", items: [
+    { text: "Programación y ejecución de inventarios", points: 9 },
+    { text: "Códigos programados contados totalmente", points: 10 },
+    { text: "Stock teórico vs físico (inventarios programados)", points: 8 },
+    { text: "Ajustes cuentan con autorización", points: 3 },
+    { text: "Legajos completos", points: 3 },
+    { text: "Análisis de legajos realizado", points: 3 },
+    { text: "Stock teórico vs físico (productos ajustados)", points: 8 },
+    { text: "Inventario 04 (Devolución) cuadra con físico", points: 10 },
+    { text: "Inventarios 02,03,05,06 y 09 cuadran con físico", points: 5 },
+    { text: "Productos con stock exhibidos para la venta", points: 10 },
+    { text: "Facturas/GR cuentan con conformidad de recepción", points: 5 },
+    { text: "Cantidades recepcionadas coinciden con sistema", points: 5 },
+    { text: "Transferencias recepcionadas en sistema", points: 5 },
+    { text: "Transferencias cuentan con autorizaciones", points: 5 },
+    { text: "Donaciones cuentan con sustento", points: 2 },
+    { text: "Productos donados son los autorizados", points: 2 }
+  ]},
+  { category: "CALIDAD", items: [
+    { text: "Refrigeración ≤ 5°C", points: 3 },
+    { text: "Congelados ≤ -18°C", points: 3 },
+    { text: "Productos en buenas condiciones y frescura", points: 4 },
+    { text: "Equipos y utensilios en buen estado", points: 4 },
+    { text: "Infraestructura en buen estado", points: 4 },
+    { text: "Limpieza de superficies sin contacto", points: 3 },
+    { text: "Ausencia de plagas", points: 6 },
+    { text: "Termómetro operativo", points: 2 },
+    { text: "Colaborador sabe tomar temperatura", points: 4 },
+    { text: "Productos exhibidos con rótulo de vencimiento", points: 4 },
+    { text: "Manipulación adecuada de alimentos", points: 4 },
+    { text: "Ausencia de envases abollados u oxidados", points: 2 },
+    { text: "Productos vigentes (no vencidos)", points: 6 },
+    { text: "Manejo según tiempos de vida útil", points: 2 },
+    { text: "Devolución/merma separada y rotulada", points: 3 },
+    { text: "Jabas no colocadas directamente en piso", points: 3 },
+    { text: "Distancias de almacenamiento correctas", points: 2 },
+    { text: "Limpieza de superficies en contacto con alimentos", points: 4 },
+    { text: "Utensilios de limpieza en buen estado", points: 2 },
+    { text: "Basureros adecuados", points: 2 },
+    { text: "Stock de químicos y rotulación correcta", points: 2 },
+    { text: "Material de empaque en buen estado", points: 2 },
+    { text: "Baños limpios y abastecidos", points: 3 },
+    { text: "Retiros de mercadería según Calidad", points: 3 }
+  ]},
+  { category: "SST", items: [
+    { text: "Conexiones eléctricas en buenas condiciones", points: 5 },
+    { text: "Escaleras operativas", points: 5 },
+    { text: "Techos, paredes, pisos y tuberías con mantenimiento", points: 5 },
+    { text: "Almacenamiento seguro de mercadería", points: 5 },
+    { text: "Botiquín y primeros auxilios vigentes", points: 5 },
+    { text: "Equipos de emergencia libres de obstáculos", points: 5 },
+    { text: "Equipos de emergencia operativos", points: 5 },
+    { text: "Rutas de evacuación libres", points: 5 },
+    { text: "Mapa de riesgo publicado", points: 5 },
+    { text: "IPER publicado", points: 5 },
+    { text: "Proveedores de alto riesgo cumplen requisitos SST", points: 5 }
+  ]},
+  { category: "MANTENIMIENTO", items: [
+    { text: "Cronograma de mantenimiento preventivo", points: 5 },
+    { text: "Ejecución del mantenimiento preventivo según cronograma", points: 5 },
+    { text: "Conformidad de servicio preventivo", points: 5 },
+    { text: "Conformidad de servicio correctivo", points: 5 },
+    { text: "Atención oportuna de emergencias/adicionales", points: 5 },
+    { text: "Conformidad de servicios adicionales", points: 5 },
+    { text: "Infraestructura en buenas condiciones", points: 5 },
+    { text: "Baños en buen estado y funcionamiento", points: 3 },
+    { text: "Certificado de fumigación vigente", points: 6 },
+    { text: "Correcta reposición de cebos", points: 4 },
+    { text: "Filtro de agua vigente", points: 5 }
+  ]},
+  { category: "REGULATORIA", items: [
+    { text: "Licencia de Funcionamiento vigente", points: 5 },
+    { text: "Autorización de Uso de Retiro", points: 5 },
+    { text: "Autorización de Anuncios Publicitarios", points: 5 },
+    { text: "Certificado de Defensa Civil vigente", points: 5 },
+    { text: "Certificado de Desinfección y Fumigación vigente", points: 5 },
+    { text: "Certificado de operatividad de Luces de Emergencia", points: 5 },
+    { text: "Certificado de operatividad de Extintores", points: 5 },
+    { text: "Certificado de operatividad de Detectores de Humo", points: 5 },
+    { text: "Certificado de operatividad de Pozo Tierra", points: 5 },
+    { text: "Plano de Arquitectura y Distribución vigente", points: 5 },
+    { text: "Plano de Localización y Ubicación vigente", points: 5 },
+    { text: "Plano de Señalización y Evacuación vigente", points: 5 },
+    { text: "Constancia de capacitación de Primeros Auxilios", points: 5 },
+    { text: "Publicación visible del aforo", points: 5 },
+    { text: "Política SST publicada y vigente", points: 5 },
+    { text: "PASST y objetivos actualizados", points: 5 }
+  ]}
+];
+
+// ====================== FIREBASE ======================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBxgW2FTlicaMjhqKSW-lK0NzskQhcQejA",
+  authDomain: "tiendas-mass-operaciones.firebaseapp.com",
+  projectId: "tiendas-mass-operaciones",
+  storageBucket: "tiendas-mass-operaciones.firebasestorage.app",
+  messagingSenderId: "671707218913",
+  appId: "1:671707218913:web:f4e542384f97ac6c45c8a0"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const fdb = getFirestore(fbApp);
+const fbAuth = getAuth(fbApp);
+// Documento PROPIO y separado del que usa la app principal (operaciones/main)
+// Misma estructura interna (auditChecklistHistory + fallos) para integrarlo fácil después
+const auditDocRef = doc(fdb, "operaciones", "auditorias_jefe");
+
+let suppressUntil = 0;
+let DB = { auditChecklistHistory: [], fallos: [] };
+
+async function loadDB(){
+  try{
+    const snap = await getDoc(auditDocRef);
+    if(snap.exists()){
+      const data = snap.data();
+      DB.auditChecklistHistory = data.auditChecklistHistory || [];
+      DB.fallos = data.fallos || [];
+    }
+  }catch(e){
+    console.warn("Firebase no disponible:", e);
+  }
+}
+async function saveDB(){
+  try{
+    suppressUntil = Date.now() + 800;
+    await setDoc(auditDocRef, {
+      auditChecklistHistory: DB.auditChecklistHistory,
+      fallos: DB.fallos,
+      actualizado: new Date().toISOString()
+    });
+  }catch(e){
+    console.warn("Error guardando en Firebase:", e);
+    showToast("No se pudo sincronizar con la nube", "error");
+  }
+}
+function fbWatch(cb){
+  onSnapshot(auditDocRef, (snap)=>{
+    if(Date.now() < suppressUntil) return;
+    if(!snap.exists()) return;
+    cb(snap.data());
+  });
+}
+
+// ====================== UTILS ======================
+function today(){ return new Date().toISOString().split('T')[0]; }
+function fmtDate(iso){ if(!iso) return '—'; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
+const MESES_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function monthYearLabel(key){
+  if(!key || key === 'sin-fecha') return 'Sin fecha';
+  const [y,m] = key.split('-');
+  const name = MESES_ES[parseInt(m,10)-1] || m;
+  return `${name.charAt(0).toUpperCase()}${name.slice(1)} ${y}`;
+}
+function showToast(msg, type){
+  const toast = document.getElementById("toast");
+  toast.textContent = msg;
+  toast.className = "toast show" + (type ? " " + type : "");
+  setTimeout(()=>{ toast.className = "toast"; }, 2500);
+}
+
+// ====================== LOGIN ======================
+// Como en RetailManager: se elige un usuario (no un correo), y por dentro
+// se traduce a la cuenta real de Firebase.
+const USER_EMAILS = { JEFE: "jefe@tiendasmass.app" };
+const loginForm = document.getElementById("loginForm");
+const loginError = document.getElementById("loginError");
+const loginScreen = document.getElementById("loginScreen");
+const appScreen = document.getElementById("appScreen");
+const loginSubmitBtn = document.getElementById("loginSubmitBtn");
+
+loginForm.addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const u = document.getElementById("loginUser").value;
+  const p = document.getElementById("loginPass").value;
+  if(!u){ loginError.textContent = "Selecciona un usuario."; loginError.style.display = "block"; return; }
+  loginSubmitBtn.disabled = true;
+  loginSubmitBtn.textContent = "Ingresando...";
+  try{
+    await signInWithEmailAndPassword(fbAuth, USER_EMAILS[u], p);
+    loginError.style.display = "none";
+    // showApp() se dispara solo, vía onAuthStateChanged
+  }catch(err){
+    loginError.textContent = "Usuario o contraseña incorrectos.";
+    loginError.style.display = "block";
+  }finally{
+    loginSubmitBtn.disabled = false;
+    loginSubmitBtn.textContent = "Ingresar";
+  }
+});
+
+document.getElementById("logoutBtn").addEventListener("click", async ()=>{
+  await signOut(fbAuth);
+});
+
+function showApp(){
+  loginScreen.style.display = "none";
+  appScreen.style.display = "block";
+  initApp();
+}
+
+onAuthStateChanged(fbAuth, (user)=>{
+  if(user){
+    showApp();
+  }else{
+    appScreen.style.display = "none";
+    loginScreen.style.display = "flex";
+    document.getElementById("loginUser").value = "";
+    document.getElementById("loginPass").value = "";
+  }
+});
+
+// ====================== APP ======================
+let appInitialized = false;
+let auditChart = null;
+let selectedStore = "";
+let selectedRole = "";
+
+function initApp(){
+  if(appInitialized) return;
+  appInitialized = true;
+
+  // Cargar tiendas
+  const storeSelect = document.getElementById("storeSelect");
+  TIENDAS.forEach(code=>{
+    const opt = document.createElement("option");
+    opt.value = code; opt.textContent = code;
+    storeSelect.appendChild(opt);
+  });
+
+  // Tabs
+  document.querySelectorAll(".tab").forEach(tab=>{
+    tab.addEventListener("click", ()=> switchTab(parseInt(tab.dataset.tab)));
+  });
+
+  // Selección tienda + rol
+  const roleBtns = document.querySelectorAll(".role-btn");
+  const startBtn = document.getElementById("startChecklistBtn");
+
+  storeSelect.addEventListener("change", ()=>{
+    selectedStore = storeSelect.value;
+    updateStartBtn();
+  });
+  roleBtns.forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      roleBtns.forEach(b=>b.classList.remove("selected"));
+      btn.classList.add("selected");
+      selectedRole = btn.dataset.role;
+      updateStartBtn();
+    });
+  });
+  function updateStartBtn(){
+    startBtn.disabled = !(selectedStore && selectedRole);
+  }
+
+  startBtn.addEventListener("click", ()=>{
+    document.getElementById("selectionCard").style.display = "none";
+    document.getElementById("checklistSection").style.display = "block";
+    document.getElementById("selectedSummary").innerHTML =
+      `Auditando a: <b>${selectedRole}</b> &middot; Tienda: <b>${selectedStore}</b>
+       <div class="change-link" id="changeSelectionLink">Cambiar tienda / rol</div>`;
+    document.getElementById("changeSelectionLink").addEventListener("click", ()=>{
+      document.getElementById("checklistSection").style.display = "none";
+      document.getElementById("selectionCard").style.display = "block";
+    });
+    initAuditChecklistSystem();
+  });
+
+  document.getElementById("saveAuditBtn").addEventListener("click", saveAuditChecklist);
+  document.getElementById("resetAuditBtn").addEventListener("click", resetAuditChecklist);
+
+  document.getElementById("hist-filter-tienda").addEventListener("change", renderAuditHistory);
+  document.getElementById("hist-filter-estado").addEventListener("change", renderAuditHistory);
+  document.getElementById("fallo-filter-tienda").addEventListener("change", renderFallos);
+  document.getElementById("fallo-filter-estado").addEventListener("change", renderFallos);
+
+  // Cargar datos existentes
+  loadDB().then(()=>{
+    populateStoreFilters();
+    renderAuditHistory();
+    renderFallos();
+  });
+
+  fbWatch((data)=>{
+    DB.auditChecklistHistory = data.auditChecklistHistory || [];
+    DB.fallos = data.fallos || [];
+    populateStoreFilters();
+    renderAuditHistory();
+    renderFallos();
+  });
+}
+
+function switchTab(index){
+  document.querySelectorAll(".tab").forEach((t,i)=> t.classList.toggle("active", i===index));
+  [0,1,2].forEach(i=>{
+    document.getElementById(`panel-${i}`).style.display = i===index ? "block" : "none";
+  });
+}
+
+function populateStoreFilters(){
+  [document.getElementById("hist-filter-tienda"), document.getElementById("fallo-filter-tienda")].forEach(sel=>{
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Todas las tiendas</option>' +
+      TIENDAS.map(t=>`<option value="${t}">${t}</option>`).join('');
+    sel.value = current;
+  });
+}
+
+// ---------- CHECKLIST ----------
+function initAuditChecklistSystem(){
+  const container = document.getElementById('auditChecklistContainer');
+  container.innerHTML = '';
+
+  auditChecklistData.forEach((cat, catIndex) => {
+    const totalCatPoints = cat.items.reduce((sum, item) => sum + item.points, 0);
+    const section = document.createElement('div');
+    section.className = 'category-section';
+    section.innerHTML = `
+      <div class="category-header" onclick="window.__toggleCat(${catIndex})">
+        <span>${cat.category} <span style="font-size:11px;color:var(--text3);font-weight:400">(${cat.items.length} ítems)</span></span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="select-all-btn" onclick="event.stopPropagation();window.__selectAllCat(${catIndex})">Seleccionar todo</button>
+          <span class="category-score" id="score-cat-${catIndex}">0 / ${totalCatPoints} pts (0.00%)</span>
+        </div>
+      </div>
+      <div class="category-content" id="content-cat-${catIndex}">
+        ${cat.items.map((item, itemIndex) => `
+          <div class="audit-item">
+            <input type="checkbox" id="audit-chk-${catIndex}-${itemIndex}" data-cat="${catIndex}" data-idx="${itemIndex}" data-points="${item.points}" onchange="window.__calcAudit()">
+            <label for="audit-chk-${catIndex}-${itemIndex}">${item.text}</label>
+            <span class="item-points">${item.points} pts</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    container.appendChild(section);
+  });
+
+  const ctx = document.getElementById('auditChart').getContext('2d');
+  if(auditChart) auditChart.destroy();
+  document.getElementById('chartWrap').style.height = (auditChecklistData.length * 34 + 30) + 'px';
+  auditChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: auditChecklistData.map(c => c.category),
+      datasets: [{
+        label: '% Cumplimiento',
+        data: new Array(auditChecklistData.length).fill(0),
+        backgroundColor: 'rgba(11, 61, 145, 0.7)',
+        borderColor: 'rgba(11, 61, 145, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } },
+        y: { ticks: { autoSkip: false, font: { size: 10.5 } } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  calculateAuditChecklist();
+}
+
+window.__toggleCat = function(index){
+  document.getElementById(`content-cat-${index}`).classList.toggle('open');
+};
+window.__selectAllCat = function(catIndex){
+  const checkboxes = document.querySelectorAll(`input[data-cat="${catIndex}"]`);
+  const allChecked = [...checkboxes].every(c => c.checked);
+  checkboxes.forEach(c => c.checked = !allChecked);
+  calculateAuditChecklist();
+};
+window.__calcAudit = function(){ calculateAuditChecklist(); };
+
+function calculateAuditChecklist(){
+  const categoryPercentages = [];
+  auditChecklistData.forEach((cat, catIndex) => {
+    const checkboxes = document.querySelectorAll(`input[data-cat="${catIndex}"]`);
+    let obtained = 0, total = 0;
+    checkboxes.forEach(chk => {
+      total += parseInt(chk.dataset.points);
+      if (chk.checked) obtained += parseInt(chk.dataset.points);
+    });
+    const percentage = total > 0 ? (obtained / total) * 100 : 0;
+    categoryPercentages.push(percentage);
+    const scoreEl = document.getElementById(`score-cat-${catIndex}`);
+    if(scoreEl) scoreEl.textContent = `${obtained} / ${total} pts (${percentage.toFixed(2)}%)`;
+  });
+
+  const totalAverage = categoryPercentages.reduce((a, b) => a + b, 0) / categoryPercentages.length;
+  document.getElementById('finalScore').textContent = totalAverage.toFixed(2) + '%';
+
+  const statusBox = document.getElementById('statusBox');
+  const statusText = document.getElementById('finalStatus');
+  statusBox.className = 'score-box';
+
+  if (totalAverage >= 95) { statusBox.classList.add('aprobado'); statusText.textContent = 'APROBADO'; }
+  else if (totalAverage >= 90) { statusBox.classList.add('bueno'); statusText.textContent = 'BUENO'; }
+  else { statusBox.classList.add('jalado'); statusText.textContent = 'JALADO'; }
+
+  if (auditChart) {
+    auditChart.data.datasets[0].data = categoryPercentages;
+    auditChart.update();
+  }
+}
+
+function resetAuditChecklist(){
+  if(confirm('¿Reiniciar toda la auditoría?')) {
+    document.querySelectorAll('#auditChecklistContainer input[type="checkbox"]').forEach(chk => chk.checked = false);
+    calculateAuditChecklist();
+  }
+}
+
+// ---------- GUARDAR (idéntico a la app principal + tienda/rol) ----------
+async function saveAuditChecklist(){
+  const scoreText = document.getElementById('finalScore').textContent;
+  const status = document.getElementById('finalStatus').textContent;
+
+  if (status === 'SIN EVALUAR') {
+    alert('Por favor completa al menos algunas categorías antes de guardar.');
+    return;
+  }
+
+  const detalleCategorias = [];
+  const fallosGenerados = [];
+  let totalObtenido = 0, totalPosible = 0;
+  const auditId = 'audit-' + Date.now();
+
+  auditChecklistData.forEach((cat, catIndex) => {
+    const checkboxes = document.querySelectorAll(`input[data-cat="${catIndex}"]`);
+    let catObtenido = 0, catTotal = 0;
+    const itemsCumplidos = [];
+    const itemsNoCumplidos = [];
+
+    checkboxes.forEach(chk => {
+      const idx = parseInt(chk.dataset.idx);
+      const pts = parseInt(chk.dataset.points);
+      catTotal += pts;
+      totalPosible += pts;
+      if (chk.checked) {
+        catObtenido += pts;
+        totalObtenido += pts;
+        itemsCumplidos.push({ text: cat.items[idx].text, points: pts });
+      } else {
+        itemsNoCumplidos.push({ text: cat.items[idx].text, points: pts });
+      }
+    });
+
+    detalleCategorias.push({
+      categoria: cat.category,
+      obtenido: catObtenido,
+      total: catTotal,
+      porcentaje: catTotal > 0 ? (catObtenido/catTotal*100) : 0,
+      itemsCumplidos,
+      itemsNoCumplidos
+    });
+
+    itemsNoCumplidos.forEach(item => {
+      fallosGenerados.push({
+        id: 'fallo-' + Date.now() + '-' + Math.random().toString(36).substr(2,5),
+        fecha: today(),
+        categoria: cat.category,
+        desc: item.text,
+        puntos: item.points,
+        origen: 'checklist',
+        estado: 'Pendiente',
+        auditor: REGISTRADO_POR,
+        tienda: selectedStore,
+        auditadoRol: selectedRole,
+        obsSolucion: '',
+        limite: '',
+        auditId: auditId
+      });
+    });
+  });
+
+  const porcentajeGeneral = totalPosible > 0 ? (totalObtenido/totalPosible*100) : 0;
+
+  const auditRecord = {
+    id: auditId,
+    fecha: today(),
+    hora: new Date().toLocaleTimeString('es-PE'),
+    registradoPor: REGISTRADO_POR,
+    tienda: selectedStore,
+    auditadoRol: selectedRole,
+    puntaje: scoreText,
+    porcentaje: porcentajeGeneral,
+    estado: status,
+    totalObtenido,
+    totalPosible,
+    detalleCategorias,
+    fallosGenerados: fallosGenerados.length,
+    timestamp: new Date().toISOString()
+  };
+
+  DB.auditChecklistHistory.push(auditRecord);
+  DB.fallos = [...DB.fallos, ...fallosGenerados];
+  await saveDB();
+
+  const msg = fallosGenerados.length > 0
+    ? `Auditoría guardada — Tienda ${selectedStore} (${selectedRole})\nPuntaje: ${scoreText} (${status})\nSe generaron ${fallosGenerados.length} fallos pendientes.`
+    : `Auditoría guardada — Tienda ${selectedStore} (${selectedRole})\nPuntaje: ${scoreText} (${status})\n¡No se generaron fallos!`;
+  showToast(msg.split('\n')[0], "success");
+  alert(msg);
+
+  document.querySelectorAll('#auditChecklistContainer input[type="checkbox"]').forEach(chk => chk.checked = false);
+  calculateAuditChecklist();
+
+  // Volver a selección para la próxima auditoría
+  document.getElementById("checklistSection").style.display = "none";
+  document.getElementById("selectionCard").style.display = "block";
+  document.getElementById("storeSelect").value = "";
+  document.querySelectorAll(".role-btn").forEach(b=>b.classList.remove("selected"));
+  selectedStore = ""; selectedRole = "";
+  document.getElementById("startChecklistBtn").disabled = true;
+
+  populateStoreFilters();
+  renderAuditHistory();
+  renderFallos();
+}
+
+// ---------- HISTORIAL ----------
+function renderAuditHistory(){
+  const container = document.getElementById('audit-history-list');
+  const filterEstado = document.getElementById('hist-filter-estado')?.value || '';
+  const filterTienda = document.getElementById('hist-filter-tienda')?.value || '';
+  let data = [...DB.auditChecklistHistory].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+  if(filterEstado) data = data.filter(a => a.estado === filterEstado);
+  if(filterTienda) data = data.filter(a => a.tienda === filterTienda);
+
+  if(!data.length){
+    container.innerHTML = '<div class="empty-state"><span class="icon">📋</span>No hay auditorías guardadas aún.</div>';
+    return;
+  }
+
+  // Agrupar por mes-año (según fecha de la auditoría)
+  const groups = {};
+  data.forEach(a => {
+    const key = (a.fecha && a.fecha.length >= 7) ? a.fecha.slice(0,7) : 'sin-fecha';
+    (groups[key] = groups[key] || []).push(a);
+  });
+  const datedKeys = Object.keys(groups).filter(k => k !== 'sin-fecha').sort((a,b) => b.localeCompare(a));
+  const orderedKeys = groups['sin-fecha'] ? [...datedKeys, 'sin-fecha'] : datedKeys;
+
+  container.innerHTML = orderedKeys.map((key, gi) => {
+    const items = groups[key];
+    const itemsHtml = items.map(a => {
+      const statusClass = a.estado === 'APROBADO' ? 'badge-ok' : a.estado === 'BUENO' ? 'badge-warn' : 'badge-danger';
+      return `<div class="audit-history-item">
+        <div class="audit-history-header">
+          <div onclick="window.__verDetalle('${a.id}')" style="cursor:pointer">
+            <strong>${a.tienda || '—'} · ${a.auditadoRol || '—'}</strong><br>
+            <span style="font-size:11px;color:var(--text3)">${fmtDate(a.fecha)} ${a.hora || ''}</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="badge ${statusClass}">${a.estado}</span>
+            <strong style="font-size:16px;color:var(--mass-blue)">${a.puntaje}</strong>
+          </div>
+        </div>
+        <div class="audit-history-details">
+          <div onclick="window.__verDetalle('${a.id}')" style="cursor:pointer">${a.totalObtenido} / ${a.totalPosible} pts · ${a.fallosGenerados || 0} fallos generados</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span onclick="window.__verDetalle('${a.id}')" style="color:var(--mass-blue);font-weight:600;cursor:pointer">Ver detalle →</span>
+            <button class="icon-btn" onclick="window.__delAuditoria('${a.id}')">Eliminar</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div class="category-section">
+      <div class="month-header" onclick="window.__toggleMonth(${gi})">
+        <span>🗓️ ${monthYearLabel(key)} <span style="font-size:11px;color:var(--text3);font-weight:400">(${items.length} auditorías)</span></span>
+      </div>
+      <div class="month-content ${gi===0 ? 'open' : ''}" id="month-content-${gi}">
+        ${itemsHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.__toggleMonth = function(i){
+  document.getElementById(`month-content-${i}`).classList.toggle('open');
+};
+
+window.__delAuditoria = async function(id){
+  const audit = DB.auditChecklistHistory.find(a => a.id === id);
+  if(!audit) return;
+  if(!confirm(`¿Eliminar la auditoría de ${audit.tienda} del ${fmtDate(audit.fecha)}? También se eliminarán sus fallos de checklist.`)) return;
+  DB.auditChecklistHistory = DB.auditChecklistHistory.filter(a => a.id !== id);
+  DB.fallos = DB.fallos.filter(f => f.auditId !== id);
+  await saveDB();
+  renderAuditHistory();
+  renderFallos();
+  showToast('Auditoría eliminada', 'success');
+};
+
+window.__verDetalle = function(id){
+  const audit = DB.auditChecklistHistory.find(a => a.id === id);
+  if(!audit) return;
+  const statusClass = audit.estado === 'APROBADO' ? 'badge-ok' : audit.estado === 'BUENO' ? 'badge-warn' : 'badge-danger';
+
+  let html = `
+    <div style="background:#f7f8fa;padding:14px;border-radius:12px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+        <strong style="font-size:15px">${audit.tienda} — ${audit.auditadoRol}</strong>
+        <span class="badge ${statusClass}">${audit.estado}</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--text2);display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div><b>Fecha:</b> ${fmtDate(audit.fecha)} ${audit.hora||''}</div>
+        <div><b>Puntaje:</b> ${audit.puntaje}</div>
+        <div><b>Puntos:</b> ${audit.totalObtenido} / ${audit.totalPosible}</div>
+        <div><b>Fallos:</b> ${audit.fallosGenerados || 0}</div>
+      </div>
+    </div>
+  `;
+
+  audit.detalleCategorias.forEach(cat => {
+    const pctColor = cat.porcentaje >= 95 ? 'var(--success)' : cat.porcentaje >= 90 ? 'var(--amber)' : 'var(--danger)';
+    html += `<div style="margin-bottom:10px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      <div style="background:#f7f8fa;padding:9px 12px;display:flex;justify-content:space-between;font-size:13px">
+        <strong>${cat.categoria}</strong>
+        <span style="color:${pctColor};font-weight:700">${cat.obtenido}/${cat.total} pts (${cat.porcentaje.toFixed(1)}%)</span>
+      </div>
+      <div style="padding:8px 12px">`;
+    if(cat.itemsNoCumplidos.length){
+      html += `<div style="font-size:11.5px;color:var(--danger);font-weight:700;margin-bottom:4px">NO CUMPLIDOS (${cat.itemsNoCumplidos.length})</div>`;
+      html += cat.itemsNoCumplidos.map(i=>`<div style="font-size:12px;padding:3px 0;border-bottom:1px solid #f1f2f5">• ${i.text} <span style="color:var(--danger)">(-${i.points})</span></div>`).join('');
+    }
+    if(cat.itemsCumplidos.length){
+      html += `<div style="font-size:11.5px;color:var(--success);font-weight:700;margin:6px 0 4px">CUMPLIDOS (${cat.itemsCumplidos.length})</div>`;
+      html += cat.itemsCumplidos.map(i=>`<div style="font-size:12px;padding:3px 0;color:var(--text2)">• ${i.text} <span style="color:var(--success)">(+${i.points})</span></div>`).join('');
+    }
+    html += `</div></div>`;
+  });
+
+  document.getElementById('detalleContent').innerHTML = html;
+  document.getElementById('modalDetalle').classList.add('open');
+};
+
+window.closeDetalle = function(){
+  document.getElementById('modalDetalle').classList.remove('open');
+};
+
+// ---------- FALLOS ----------
+function renderFallos(){
+  const container = document.getElementById('fallos-list');
+  const filterEstado = document.getElementById('fallo-filter-estado')?.value || '';
+  const filterTienda = document.getElementById('fallo-filter-tienda')?.value || '';
+  let data = [...DB.fallos].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+  if(filterEstado) data = data.filter(f => f.estado === filterEstado);
+  if(filterTienda) data = data.filter(f => f.tienda === filterTienda);
+
+  if(!data.length){
+    container.innerHTML = '<div class="empty-state"><span class="icon">✅</span>Sin fallos en este filtro.</div>';
+    return;
+  }
+
+  // Agrupar por categoría (orden según el checklist), cada fallo conserva su tienda
+  const grouped = {};
+  data.forEach(f => {
+    const cat = f.categoria || 'Sin categoría';
+    (grouped[cat] = grouped[cat] || []).push(f);
+  });
+  const orderedCats = auditChecklistData.map(c => c.category).filter(c => grouped[c]);
+  Object.keys(grouped).forEach(c => { if(!orderedCats.includes(c)) orderedCats.push(c); });
+
+  container.innerHTML = orderedCats.map((cat, gi) => {
+    const items = grouped[cat];
+    const itemsHtml = items.map(f => `
+      <div class="fallo-row">
+        <div class="fallo-top">
+          <span class="fallo-cat">${f.tienda || '—'}</span>
+          <span class="fallo-meta">${fmtDate(f.fecha)} · ${f.auditadoRol || '—'}</span>
+        </div>
+        <div class="fallo-desc">${f.desc}</div>
+        <div class="fallo-meta">${f.puntos} pts</div>
+        <div class="fallo-actions">
+          <select class="fallo-select" onchange="window.__cambiarEstadoFallo('${f.id}', this.value)">
+            <option ${f.estado==='Pendiente'?'selected':''}>Pendiente</option>
+            <option ${f.estado==='En proceso'?'selected':''}>En proceso</option>
+            <option ${f.estado==='Subsanado'?'selected':''}>Subsanado</option>
+          </select>
+        </div>
+        ${f.obsSolucion ? `<div style="font-size:12px;margin-top:6px;color:var(--text2)"><b>Solución:</b> ${f.obsSolucion}</div>` : ''}
+      </div>
+    `).join('');
+
+    return `<div class="category-section">
+      <div class="category-header" onclick="window.__toggleFalloCat(${gi})">
+        <span>${cat} <span style="font-size:11px;color:var(--text3);font-weight:400">(${items.length} fallos)</span></span>
+      </div>
+      <div class="category-content ${gi===0 ? 'open' : ''}" id="fallo-cat-content-${gi}">
+        ${itemsHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.__toggleFalloCat = function(i){
+  document.getElementById(`fallo-cat-content-${i}`).classList.toggle('open');
+};
+
+window.__cambiarEstadoFallo = async function(id, estado){
+  const f = DB.fallos.find(f => f.id === id);
+  if(!f) return;
+  if(estado === 'Subsanado' && !f.obsSolucion){
+    const obs = prompt('Describe brevemente cómo se subsanó el fallo:');
+    if(obs) f.obsSolucion = obs;
+  }
+  f.estado = estado;
+  await saveDB();
+  renderFallos();
+  showToast('Estado actualizado', 'success');
+};
+</script>
+</body>
+</html>
