@@ -766,6 +766,39 @@ function descargarResumenPDF(auditRecord){
     styles: { fontSize: 9, cellPadding: 3 }
   });
 
+  // ---- Detalle de fallos (ítems no cumplidos) por categoría ----
+  let cursorY = doc.lastAutoTable.finalY + 10;
+  doc.setFontSize(12);
+  doc.text('Detalle de fallos encontrados', 14, cursorY);
+  cursorY += 4;
+
+  const categoriasConFallos = auditRecord.detalleCategorias.filter(c => c.itemsNoCumplidos && c.itemsNoCumplidos.length);
+
+  if (!categoriasConFallos.length) {
+    doc.setFontSize(10);
+    doc.text('No se encontraron fallos. ¡Auditoría sin observaciones!', 14, cursorY + 6);
+  } else {
+    categoriasConFallos.forEach(cat => {
+      if (cursorY > 270) { doc.addPage(); cursorY = 16; }
+      doc.setFontSize(10.5);
+      doc.setTextColor(11, 61, 145);
+      doc.text(cat.categoria, 14, cursorY + 6);
+      doc.setTextColor(0, 0, 0);
+
+      const fallosBody = cat.itemsNoCumplidos.map(i => [i.text, `-${i.points} pts`]);
+      doc.autoTable({
+        startY: cursorY + 9,
+        head: [['Ítem no cumplido', 'Puntos']],
+        body: fallosBody,
+        headStyles: { fillColor: [217, 45, 32] },
+        styles: { fontSize: 8.5, cellPadding: 2.5 },
+        columnStyles: { 1: { cellWidth: 25, halign: 'center' } },
+        margin: { left: 14, right: 14 }
+      });
+      cursorY = doc.lastAutoTable.finalY + 8;
+    });
+  }
+
   const nombreArchivo = `Auditoria_${auditRecord.tienda}_${auditRecord.fecha}.pdf`.replace(/\s+/g, '_');
   doc.save(nombreArchivo);
 }
