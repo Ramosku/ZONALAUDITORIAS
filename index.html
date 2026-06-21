@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Auditorías - Tiendas Mass</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <style>
   :root{
     --mass-blue:#0b3d91;
@@ -685,6 +688,120 @@ function fbWatch(cb){
   });
 }
 
+// ====================== ENVÍO DE CORREO AL JEFE (EmailJS - plan gratuito) ======================
+// 1) Crea una cuenta gratis en https://www.emailjs.com
+// 2) Conecta tu servicio de correo (Gmail, Outlook, etc.) -> copia el SERVICE_ID
+// 3) Crea un Template con las variables: {{tienda}} {{rol}} {{fecha}} {{hora}}
+//    {{puntaje}} {{estado}} {{tabla_html}} {{auditor}}
+//    (el plan gratuito NO permite adjuntar el PDF al correo; por eso el PDF
+//    se descarga automáticamente en el dispositivo y lo puedes reenviar a mano si quieres)
+// 4) Copia el TEMPLATE_ID y tu PUBLIC_KEY (Account > General)
+// 5) Reemplaza los valores de abajo y agrega los correos del/los jefe(s).
+const EMAIL_CONFIG = {
+  EMAILJS_PUBLIC_KEY: "X3mYHD7eCo5NZrp7O",
+  EMAILJS_SERVICE_ID: "service_zywcot9",
+  EMAILJS_TEMPLATE_ID: "template_zeyx38e",
+  JEFE_EMAILS: ["eduardo.cabello@tiendasmass.pe", "afsramosbarbaran23@gmail.com"], // agrega más así: ["correo1@tiendasmass.pe", "correo2@tiendasmass.pe"]
+  ENABLED: true // pon en true cuando hayas configurado EmailJS arriba
+};
+
+if (window.emailjs && EMAIL_CONFIG.EMAILJS_PUBLIC_KEY !== "TU_PUBLIC_KEY_AQUI") {
+  emailjs.init({ publicKey: EMAIL_CONFIG.EMAILJS_PUBLIC_KEY });
+}
+
+function estadoColor(estado){
+  if(estado === 'APROBADO' || estado === 'EXCELENTE') return '#0f9d58';
+  if(estado === 'BUENO') return '#b7791f';
+  return '#d92d20';
+}
+
+// Construye la tabla HTML (igual estilo a la captura: FRENTE / AUDITORÍA DE / NOTA / CALIFICACIÓN)
+function buildResumenTableHTML(auditRecord){
+  const rows = auditRecord.detalleCategorias.map(c => {
+    const pct = c.porcentaje.toFixed(2) + '%';
+    const calif = c.porcentaje >= 95 ? 'EXCELENTE' : c.porcentaje >= 90 ? 'BUENO' : 'REQUIERE MEJORA';
+    return `<tr>
+      <td style="padding:8px;border:1px solid #ddd;">PROCESOS</td>
+      <td style="padding:8px;border:1px solid #ddd;">${c.categoria}</td>
+      <td style="padding:8px;border:1px solid #ddd;text-align:center;">${pct}</td>
+      <td style="padding:8px;border:1px solid #ddd;text-align:center;color:${estadoColor(calif)};font-weight:700;">${calif}</td>
+    </tr>`;
+  }).join('');
+  return `<table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;font-size:13px;">
+    <thead>
+      <tr style="background:#0b3d91;color:#fff;">
+        <th style="padding:8px;border:1px solid #ddd;text-align:left;">FRENTE</th>
+        <th style="padding:8px;border:1px solid #ddd;text-align:left;">AUDITORÍA DE:</th>
+        <th style="padding:8px;border:1px solid #ddd;">NOTA</th>
+        <th style="padding:8px;border:1px solid #ddd;">CALIFICACIÓN</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+// Genera el PDF con el mismo cuadro y lo descarga directamente en el dispositivo
+// (no se adjunta al correo porque EmailJS solo permite adjuntos en planes pagos)
+function descargarResumenPDF(auditRecord){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(14);
+  doc.text(`Resultados de Auditoría — Tienda: ${auditRecord.tienda}`, 14, 18);
+  doc.setFontSize(10);
+  doc.text(`Auditado: ${auditRecord.auditadoRol}   Fecha: ${fmtDate(auditRecord.fecha)} ${auditRecord.hora || ''}`, 14, 25);
+  doc.text(`Auditor: ${auditRecord.registradoPor || ''}`, 14, 31);
+  doc.text(`Puntaje general: ${auditRecord.puntaje}  (${auditRecord.estado})`, 14, 37);
+
+  const body = auditRecord.detalleCategorias.map(c => {
+    const pct = c.porcentaje.toFixed(2) + '%';
+    const calif = c.porcentaje >= 95 ? 'EXCELENTE' : c.porcentaje >= 90 ? 'BUENO' : 'REQUIERE MEJORA';
+    return ['PROCESOS', c.categoria, pct, calif];
+  });
+
+  doc.autoTable({
+    startY: 44,
+    head: [['FRENTE', 'AUDITORÍA DE:', 'NOTA', 'CALIFICACIÓN']],
+    body,
+    headStyles: { fillColor: [11, 61, 145] },
+    styles: { fontSize: 9, cellPadding: 3 }
+  });
+
+  const nombreArchivo = `Auditoria_${auditRecord.tienda}_${auditRecord.fecha}.pdf`.replace(/\s+/g, '_');
+  doc.save(nombreArchivo);
+}
+
+// Envía el correo al jefe con el resumen en HTML (sin adjunto, plan gratuito de EmailJS)
+// y además descarga el PDF localmente para que lo puedas reenviar manualmente si lo necesitas.
+async function notificarAuditoriaPorCorreo(auditRecord){
+  // El PDF siempre se descarga, sin importar si el correo está configurado o no.
+  try { descargarResumenPDF(auditRecord); } catch(e){ console.error('Error generando PDF:', e); }
+
+  if (!EMAIL_CONFIG.ENABLED) {
+    console.warn('Envío de correo deshabilitado: configura EMAIL_CONFIG en el código.');
+    return;
+  }
+  try {
+    const tablaHtml = buildResumenTableHTML(auditRecord);
+
+    await emailjs.send(EMAIL_CONFIG.EMAILJS_SERVICE_ID, EMAIL_CONFIG.EMAILJS_TEMPLATE_ID, {
+      to_email: EMAIL_CONFIG.JEFE_EMAILS.join(','),
+      tienda: auditRecord.tienda,
+      rol: auditRecord.auditadoRol,
+      fecha: fmtDate(auditRecord.fecha),
+      hora: auditRecord.hora || '',
+      puntaje: auditRecord.puntaje,
+      estado: auditRecord.estado,
+      auditor: auditRecord.registradoPor || '',
+      tabla_html: tablaHtml
+    });
+
+    showToast('Correo enviado al jefe ✅', 'success');
+  } catch(e){
+    console.error('Error enviando correo:', e);
+    showToast('No se pudo enviar el correo al jefe', 'error');
+  }
+}
+
 // ====================== UTILS ======================
 function today(){ return new Date().toISOString().split('T')[0]; }
 function fmtDate(iso){ if(!iso) return '—'; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
@@ -1043,6 +1160,9 @@ async function saveAuditChecklist(){
   DB.auditChecklistHistory.push(auditRecord);
   DB.fallos = [...DB.fallos, ...fallosGenerados];
   await saveDB();
+
+  // Notificar al jefe por correo con el cuadro de resultados + PDF adjunto
+  notificarAuditoriaPorCorreo(auditRecord);
 
   const msg = fallosGenerados.length > 0
     ? `Auditoría guardada — Tienda ${selectedStore} (${selectedRole})\nPuntaje: ${scoreText} (${status})\nSe generaron ${fallosGenerados.length} fallos pendientes.`
